@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="1073beb2-d3f9-4055-9262-840073d2862f" >
+		<http:listener-connection host="localhost" port="8081" />
+	</http:listener-config>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="efb48026-948b-463f-adda-fe1912a8c7b3" >
+		<http:request-connection host="localhost" port="8082" />
+	</http:request-config>
+	<http:listener-config name="HTTP_Listener_config1" doc:name="HTTP Listener config" doc:id="bfb19616-72be-4ee6-b956-19ae5944f984" >
+		<http:listener-connection host="localhost" port="8082" />
+	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="3e619ab6-c9d2-4269-a157-6c0913389fc3" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="phil.3:8" database="hospital" />
+	</db:config>
+	<flow name="webFlow" doc:id="7a8e7274-b4f0-466b-a1a6-55fc3a51f312" >
+		<http:listener doc:name="Listener" doc:id="a58c94d4-4891-4459-b593-32ffa52f4a69" config-ref="HTTP_Listener_config" path="/B"/>
+		<set-variable value="#[attributes.queryParams.id]" doc:name="Set Variable" doc:id="9ac22abb-c52d-44f8-80da-cf194f0d9bfb" variableName="wed"/>
+		<http:request method="GET" doc:name="Request" doc:id="1494784a-5b10-4a12-a059-80262a7fbccf" config-ref="HTTP_Request_configuration" path="/web">
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	"Key" : "Value"
+}]]]></http:headers>
+			<http:query-params ><![CDATA[#[output application/java
+---
+{
+	"pid" : attributes.queryParams.wed
+}]]]></http:query-params>
+		</http:request>
+	</flow>
+	<flow name="webFlow1" doc:id="01756001-be89-4f72-9fbd-a304cc26aefc" >
+		<http:listener doc:name="Listener" doc:id="08b18f9c-e539-4744-a71e-c53410febce8" config-ref="HTTP_Listener_config1" path="/web"/>
+		<db:select doc:name="Select" doc:id="fbd3e6e0-2e86-413c-879e-394877e93ebe" config-ref="Database_Config">
+			<db:sql >select * from patient where id=:id </db:sql>
+			<db:input-parameters ><![CDATA[#[{'id':attributes.queryParams.pid}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="684fed8d-b275-4b26-9b04-139c96621ba3" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
